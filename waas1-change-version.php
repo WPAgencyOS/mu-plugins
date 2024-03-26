@@ -26,7 +26,6 @@ if( !is_admin() ){
 
 
 
-
 if ( ! defined( 'WAAS1_CHANGE_VERSION_PLUGIN_REPO_DIR' ) ) {
 	
 	if( is_dir('../plugins') ){ //we are on linux
@@ -119,7 +118,11 @@ add_filter( 'pre_site_transient_update_core', function( $transient ){
 
 
 //runs when wordpress send and api request for a theme new version
-add_filter( 'pre_set_site_transient_update_themes', function( $transient ){
+//add_filter( 'pre_set_site_transient_update_themes', 'waas1_update_theme_check_override', 15 ); //this do not work on every premium theme
+add_filter( 'site_transient_update_themes', 'waas1_update_theme_check_override', 15 );
+
+function waas1_update_theme_check_override ( $transient ){
+  
 	
 	if ( !is_object($transient) ){
 		return $transient;
@@ -160,18 +163,20 @@ add_filter( 'pre_set_site_transient_update_themes', function( $transient ){
 			
 		}
 	} //if transient response end
+  
 	return $transient;
 	
-});
-
-
+}//waas1_update_theme_check_override
 
 
 
 
 
 //runs when wordpress send and api request for a plugin new version
-add_filter( 'pre_set_site_transient_update_plugins', function( $transient ){
+//add_filter( 'pre_set_site_transient_update_plugins', 'waas1_update_plugin_check_override', 15 ); //this do not work on every premium plugin
+add_filter( 'site_transient_update_plugins', 'waas1_update_plugin_check_override', 15 );
+
+function waas1_update_plugin_check_override ( $transient ){
 	
 	if ( !is_object($transient) ){
 		return $transient;
@@ -181,8 +186,7 @@ add_filter( 'pre_set_site_transient_update_plugins', function( $transient ){
 	
 		//now check if we are maintaining the package or not.
 		foreach( $transient->response as $plugin_path=>$plugin_data ){
-			
-			
+      
 			$args = array();
 			if( isset($plugin_data->slug) ){
 				$args['slug'] = $plugin_data->slug;
@@ -190,28 +194,30 @@ add_filter( 'pre_set_site_transient_update_plugins', function( $transient ){
 				$explodedPath = explode( '/', $plugin_path );
 				$args['slug'] = $explodedPath[0];
 			}
-			
+      
 			//now check if we have versions in our repo
 			$result = waas1_check_if_we_have_repo( 'plugin', $args );
 			if( $result == false ){
 				continue;
 			}
-			
+      
+      
 			//if we are here it means we are maintaing the plugin repo ourself.
 			//but
 			//again check if we symlinked the plugin
 			$isLink = waas1_change_version_check_if_symlink( 'plugin', $args );
 			if( $isLink ){
 				//we are maintaing it and plugin is symlinked
-				unset($transient->response[$plugin_path]);
+				unset( $transient->response[$plugin_path] );
 			}
 	
 		}
 		
 	} //if transient response end
-	
+  
 	return $transient;
-});
+  
+}//waas1_update_plugin_check_override
 
 
 
@@ -277,7 +283,7 @@ add_filter( 'wp_prepare_themes_for_js', function( $prepared_themes ){
 					$changeVersionText = '<div class="change-repo-version"><a href="' . esc_url( $changeVersion_url ) . '">Git Change Branch</a></div>';
 				}else{
 					if( version_compare($gitRepoThemeVersion, $theme['version'], '>' ) ){
-						$changeVersionText = '<div class="change-repo-version change-repo-important"><a href="' . esc_url( $changeVersion_url ) . '">New Version Available</a></div>';
+						$changeVersionText = '<div class="change-repo-version change-repo-important"><a href="' . esc_url( $changeVersion_url ) . '">New Git Version Available</a></div>';
 					}else{
 						$changeVersionText = '<div class="change-repo-version"><a href="' . esc_url( $changeVersion_url ) . '">Git Change Branch</a></div>';
 					}
@@ -387,7 +393,7 @@ add_filter( 'plugin_action_links', function ( $actions, $plugin_file, $plugin_da
 		$changeVersionText = '<a href="' . esc_url( $changeVersion_url ) . '">Git Change Branch</a>';
 	}else{
 		if( version_compare($gitRepoPluginVersion, $plugin_data['Version'], '>' ) ){
-			$changeVersionText = '<a style="color:red;" href="' . esc_url( $changeVersion_url ) . '">New Version Available</a>';
+			$changeVersionText = '<a style="color:red;" href="' . esc_url( $changeVersion_url ) . '">New Git Version Available</a>';
 		}else{
 			$changeVersionText = '<a href="' . esc_url( $changeVersion_url ) . '">Git Change Branch</a>';
 		}
@@ -841,6 +847,11 @@ function waas1_change_version_show_options( $args ){
 
 
 function waas1_change_version_check_if_symlink( $type, $args ){
+  
+  //override for some plugins
+	if( $args['slug'] == 'bp-loader' ){ //buddyboss
+		$args['slug'] = 'buddyboss-platform';
+	}
 	
 	if( $type == 'plugin' ){
 		$result = is_link( WP_PLUGIN_DIR.'/'.$args['slug'] );
@@ -862,6 +873,11 @@ function waas1_change_version_check_if_symlink( $type, $args ){
 
 
 function waas1_check_if_we_have_repo( $type, $args ){
+  
+  //override for some plugins
+	if( $args['slug'] == 'bp-loader' ){ //buddyboss
+		$args['slug'] = 'buddyboss-platform';
+	}
 	
 	
 	if( $type == 'plugin' ){

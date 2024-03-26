@@ -82,8 +82,3 @@ function waas1_client_send_email_change_email( $send, $user, $userdata ){
 	
     return false;
 }
-
-
-
-
-?>

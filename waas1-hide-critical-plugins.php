@@ -243,12 +243,3 @@ add_filter( 'autoptimize_filter_cache_do_fallback', '__return_false' );
 //WP REST Cache
 //**********
 add_filter( 'wp_rest_cache/display_clear_cache_button', function( $w3tc_setting ) { return false; }, 10, 1 );
-
-
-
-
-
-
-
-
-?>

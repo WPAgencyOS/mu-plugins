@@ -33,8 +33,3 @@ add_action( 'admin_bar_menu', function(){
 	));
 	
 }, 500 );
-
-
-
-
-?>

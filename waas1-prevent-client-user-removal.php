@@ -43,6 +43,3 @@ add_action( 'delete_user', function( $id ) {
 
 	
 });
-
-
-?>
